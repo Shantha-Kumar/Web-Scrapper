@@ -1,7 +1,10 @@
 import requests
 import selectorlib
-from mail import send_mail
+from mail import send
 import time
+import sqlite3
+
+connection = sqlite3.connect('data.db')
 
 URL = "http://programmer100.pythonanywhere.com/tours/"
 
@@ -23,25 +26,36 @@ def extract(source):
 
 
 def store(data):
-    with open('data.txt', 'a') as file:
-        return file.write(data + '\n')
+    row = data.split(',')
+    row = [item.strip() for item in row]
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO events VALUES(?,?,?)", row)
+    connection.commit()
 
-def read_data():
-    with open('data.txt', 'r') as file:
-        return file.read()
+
+def read_data(data):
+    row = data.split(',')
+    row = [item.strip() for item in row]
+    band, city, date = row
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM events WHERE band=? AND city=? AND date=?",
+                   (band, city, date))  # instead of tuple u can also use row
+    rows = cursor.fetchall()
+    return rows
 
 
 if __name__ == "__main__":
     while True:
         scraped = scrape_web(URL)
         data = extract(scraped)
-        content = read_data()
 
         if data != "No upcoming tours":
-            if data not in content:
+            row = read_data(data)
+            if not row:
                 store(data)
-                # To send ith subjwect check portfolio project
-                send_mail(data)
-        time.sleep(5)
+                # To send with subject check portfolio project
+                send(data)
+                print("Mail sent")
+        time.sleep(1)
 
-#python anywhre server streamlit server to free host
+# python anywhere server streamlit server to free host
