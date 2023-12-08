@@ -11,8 +11,16 @@ HEADERS = {
 def scrape_web(url):
     response = requests.get(url, headers=HEADERS)
     source = response.text
-    print(source)
+    return source
+
+
+def extract(source):
+    extractor = selectorlib.Extractor.from_yaml_file("extract.yaml")
+    extracted_data = extractor.extract(source)['tours']
+    return extracted_data
 
 
 if __name__ == "__main__":
-    scrape_web(URL)
+    scraped = scrape_web(URL)
+    data = extract(scraped)
+    print(data)
